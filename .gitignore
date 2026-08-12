@@ -1,0 +1,15 @@
+# Dependencias
+node_modules/
+package-lock.json
+
+# Base de datos en vivo (se regenera desde seed.json en cada instalación)
+actas.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini

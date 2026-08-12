@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gestión de Activos TI — Municipalidad de Coyhaique</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#eef1f5;color:#1a1a2e;font-size:14px}
+.hdr{background:linear-gradient(135deg,#0d2137 0%,#1a3a5c 100%);color:#fff;padding:13px 24px;display:flex;align-items:center;gap:12px}
+.hdr-ico{font-size:22px;background:rgba(255,255,255,.12);padding:7px 10px;border-radius:8px}
+.hdr h1{font-size:15px;font-weight:600}
+.hdr p{font-size:11px;opacity:.6;margin-top:1px}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.hdr-search{padding:7px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:13px;width:220px;outline:none}
+.hdr-search::placeholder{color:rgba(255,255,255,.5)}
+.hdr-search:focus{background:rgba(255,255,255,.25)}
+.db-status{font-size:11px;padding:5px 11px;border-radius:20px;background:rgba(76,175,80,.2);color:#a5d6a7;border:1px solid rgba(76,175,80,.3)}
+.tabs{background:#0d2137;display:flex;padding:0 24px;gap:2px}
+.tab{padding:10px 18px;color:rgba(255,255,255,.55);cursor:pointer;font-size:13px;border-bottom:3px solid transparent;transition:.2s;user-select:none;display:flex;align-items:center;gap:6px}
+.tab:hover{color:rgba(255,255,255,.85)}
+.tab.active{color:#fff;border-bottom-color:#4fc3f7}
+.badge{background:rgba(255,255,255,.2);color:#fff;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600}
+.tab.active .badge{background:#4fc3f7;color:#0d2137}
+.panel{display:none;height:calc(100vh - 92px);overflow:hidden;flex-direction:column}
+.panel.active{display:flex}
+#t-nueva{flex-direction:row!important;height:calc(100vh - 92px)}
+.toolbar{padding:12px 20px;background:#fff;border-bottom:1px solid #dde3ea;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.toolbar-search{flex:1;min-width:200px;padding:8px 14px;border:1px solid #d0d7e3;border-radius:20px;font-size:13px;background:#f7f9fc;outline:none}
+.toolbar-search:focus{border-color:#1a3a5c;background:#fff}
+.filter-btn{padding:7px 14px;border:1px solid #d0d7e3;border-radius:20px;cursor:pointer;font-size:12px;background:#fff;transition:.2s;white-space:nowrap}
+.filter-btn:hover{background:#f0f4f8}
+.filter-btn.on{background:#1a3a5c;color:#fff;border-color:#1a3a5c}
+.count-lbl{font-size:12px;color:#888;margin-left:auto}
+.tbl-wrap{flex:1;overflow-y:auto}
+table{width:100%;border-collapse:collapse}
+thead th{background:#1a3a5c;color:#fff;padding:9px 14px;text-align:left;font-size:11.5px;font-weight:600;white-space:nowrap;position:sticky;top:0;z-index:1}
+thead th:first-child{padding-left:20px}
+tbody td{padding:9px 14px;border-bottom:1px solid #f0f2f5;font-size:13px;vertical-align:middle}
+tbody td:first-child{padding-left:20px}
+tbody tr:hover td{background:#f5f8fc;cursor:pointer}
+.empty{text-align:center;color:#bbb;padding:60px;font-size:14px}
+.tipo-pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600;color:#fff}
+.tp-pantalla{background:#1565c0}.tp-monitor{background:#0277bd}.tp-escaner{background:#6a1b9a}
+.tp-notebook{background:#2e7d32}.tp-allinone{background:#00695c}.tp-tablet{background:#4527a0}
+.tp-starlink{background:#e65100}.tp-tv{background:#37474f}.tp-impresora{background:#880e4f}
+.tp-otro{background:#546e7a}
+.est-nuevo{background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.est-usado{background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.chain-badge{background:#fff3cd;color:#856404;border:1px solid #ffc107;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;cursor:pointer;margin-left:4px}
+.actual-badge{background:#d4edda;color:#155724;border:1px solid #28a745;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;width:660px;max-width:95vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+.modal-head{background:#1a3a5c;color:#fff;padding:16px 20px;display:flex;align-items:flex-start;gap:10px}
+.modal-head h3{font-size:14px;font-weight:600}
+.modal-head p{font-size:12px;opacity:.7;margin-top:2px}
+.modal-close{margin-left:auto;cursor:pointer;font-size:18px;opacity:.7}
+.modal-close:hover{opacity:1}
+.modal-body{padding:20px;overflow-y:auto}
+.timeline{position:relative;padding-left:20px}
+.timeline::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:#e0e7ef}
+.tl-item{position:relative;margin-bottom:18px;padding-left:20px}
+.tl-dot{position:absolute;left:-14px;top:3px;width:12px;height:12px;border-radius:50%;background:#1a3a5c;border:2px solid #fff;box-shadow:0 0 0 2px #1a3a5c}
+.tl-item.latest .tl-dot{background:#2e7d32;box-shadow:0 0 0 2px #2e7d32}
+.tl-item.latest .tl-card{border-left:3px solid #2e7d32;background:#f0fdf4}
+.tl-card{border:1px solid #e0e7ef;border-radius:8px;padding:12px 14px;border-left:3px solid #cbd5e1}
+.tl-date{font-size:11px;color:#888;margin-bottom:4px;font-weight:600}
+.tl-name{font-size:13px;font-weight:600}
+.tl-sub{font-size:12px;color:#555;margin-top:2px}
+.form-panel{width:370px;min-width:370px;background:#fff;overflow-y:auto;padding:18px 20px;border-right:1px solid #dde3ea;flex-shrink:0}
+.preview-panel{flex:1;overflow-y:auto;background:#dde3ea;padding:20px;display:flex;flex-direction:column;align-items:center}
+.form-section{margin-bottom:20px}
+.form-section h3{font-size:11px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:.6px;margin-bottom:11px;padding-bottom:6px;border-bottom:1px solid #eef0f4}
+.fg{margin-bottom:11px}
+.fg label{display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500}
+.fg input,.fg select,.fg textarea{width:100%;padding:8px 10px;border:1px solid #d5dce6;border-radius:6px;font-size:13px;background:#fafbfc;font-family:inherit;transition:.2s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:#1a3a5c;box-shadow:0 0 0 3px rgba(26,58,92,.08);background:#fff}
+.fg textarea{resize:vertical;min-height:55px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.radio-grp{display:flex;gap:16px}
+.radio-grp label{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;font-weight:400}
+.chk-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.chk-item{display:flex;align-items:center;gap:6px;font-size:13px}
+.chk-item input{width:15px;height:15px;accent-color:#1a3a5c;cursor:pointer}
+.btn{padding:9px 16px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:#1a3a5c;color:#fff}.btn-primary:hover{background:#254d7a}
+.btn-success{background:#1b5e20;color:#fff}.btn-success:hover{background:#256428}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.save-ok{display:none;margin-top:8px;font-size:12px;color:#2e7d32;padding:6px 10px;background:#e8f5e9;border-radius:5px}
+.save-err{display:none;margin-top:8px;font-size:12px;color:#b71c1c;padding:6px 10px;background:#ffebee;border-radius:5px}
+.preview-bar{display:flex;justify-content:space-between;align-items:center;width:740px;max-width:100%;margin-bottom:12px}
+.preview-bar span{font-size:12px;color:#666}
+.acta-doc{background:#fff;width:740px;max-width:100%;min-height:970px;padding:62px 72px;font-family:'Times New Roman',Georgia,serif;font-size:11.5pt;line-height:1.55;box-shadow:0 3px 16px rgba(0,0,0,.18)}
+.a-title{text-align:center;font-weight:bold;margin-bottom:6px}
+.a-subtitle{text-align:center;font-weight:bold;margin-bottom:12px}
+.a-date{margin-bottom:16px}
+.a-para{text-align:justify;margin-bottom:14px}
+.a-sec{font-weight:bold;margin-top:14px;margin-bottom:8px}
+.a-list{margin-left:28px;margin-bottom:12px}
+.a-list li{margin-bottom:1px}
+.a-sig{margin-top:22px}
+.a-line{display:inline-block;width:210px;border-bottom:1px solid #333;vertical-align:bottom}
+.a-gap{display:block;margin-top:28px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;gap:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:18px;height:18px;border:2px solid #ddd;border-top-color:#1a3a5c;border-radius:50%;animation:spin .7s linear infinite}
+@media print{
+  *{visibility:hidden}
+  .acta-doc,.acta-doc *{visibility:visible}
+  .acta-doc{position:fixed;inset:0;width:100%;padding:18mm 22mm;box-shadow:none;font-size:11pt}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-ico">📋</div>
+  <div>
+    <h1>Gestión de Activos TI</h1>
+    <p>Municipalidad de Coyhaique — Departamento de Informática y TI</p>
+  </div>
+  <div class="hdr-right">
+    <span class="db-status" id="db-status">⬤ Base de datos</span>
+    <input class="hdr-search" type="text" id="global-search" placeholder="🔍  Buscar funcionario, inventario, serie…" oninput="globalSearch(this.value)">
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('equipos')">📦 Equipos <span class="badge" id="b-equipos">0</span></div>
+  <div class="tab" onclick="showTab('historial')">📋 Historial <span class="badge" id="b-hist">0</span></div>
+  <div class="tab" onclick="showTab('nueva')">✏️ Nueva Acta</div>
+</div>
+
+<!-- TAB EQUIPOS -->
+<div id="t-equipos" class="panel active">
+  <div class="toolbar">
+    <input class="toolbar-search" id="eq-search" type="text" placeholder="Buscar…" oninput="renderEquipos()">
+    <span style="font-size:12px;color:#888">Tipo:</span>
+    <button class="filter-btn on" data-f="eq" data-v="" onclick="toggleFilter(this,'eq')">Todos</button>
+    <button class="filter-btn" data-f="eq" data-v="All In One" onclick="toggleFilter(this,'eq')">All In One</button>
+    <button class="filter-btn" data-f="eq" data-v="Notebook" onclick="toggleFilter(this,'eq')">Notebook</button>
+    <button class="filter-btn" data-f="eq" data-v="Pantalla" onclick="toggleFilter(this,'eq')">Pantalla</button>
+    <button class="filter-btn" data-f="eq" data-v="Escáner" onclick="toggleFilter(this,'eq')">Escáner</button>
+    <button class="filter-btn" data-f="eq" data-v="Monitor" onclick="toggleFilter(this,'eq')">Monitor</button>
+    <button class="filter-btn" data-f="eq" data-v="Antena" onclick="toggleFilter(this,'eq')">Starlink</button>
+    <button class="filter-btn" data-f="eq" data-v="TV" onclick="toggleFilter(this,'eq')">TV / Otro</button>
+    <span class="count-lbl" id="eq-count"></span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>N° Inventario</th><th>Tipo</th><th>Equipo</th><th>Serie</th>
+        <th>Asignado actualmente a</th><th>Cargo / Unidad</th>
+        <th>Última asignación</th><th>Estado</th><th>Historial</th>
+      </tr></thead>
+      <tbody id="eq-body"><tr><td colspan="9" class="empty"><div class="loading"><div class="spinner"></div> Cargando…</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB HISTORIAL -->
+<div id="t-historial" class="panel">
+  <div class="toolbar">
+    <input class="toolbar-search" id="h-search" type="text" placeholder="Buscar…" oninput="renderHistorial()">
+    <span style="font-size:12px;color:#888">Tipo:</span>
+    <button class="filter-btn on" data-f="h" data-v="" onclick="toggleFilter(this,'h')">Todos</button>
+    <button class="filter-btn" data-f="h" data-v="All In One" onclick="toggleFilter(this,'h')">All In One</button>
+    <button class="filter-btn" data-f="h" data-v="Notebook" onclick="toggleFilter(this,'h')">Notebook</button>
+    <button class="filter-btn" data-f="h" data-v="Pantalla" onclick="toggleFilter(this,'h')">Pantalla</button>
+    <button class="filter-btn" data-f="h" data-v="Escáner" onclick="toggleFilter(this,'h')">Escáner</button>
+    <button class="filter-btn" data-f="h" data-v="Monitor" onclick="toggleFilter(this,'h')">Monitor</button>
+    <button class="filter-btn" data-f="h" data-v="Antena" onclick="toggleFilter(this,'h')">Starlink</button>
+    <button class="filter-btn" data-f="h" data-v="TV" onclick="toggleFilter(this,'h')">TV / Otro</button>
+    <span class="count-lbl" id="h-count"></span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Fecha</th><th>Tipo</th><th>N° Inventario</th><th>Equipo</th>
+        <th>Serie</th><th>Funcionario</th><th>Cargo / Unidad</th><th>Estado</th>
+      </tr></thead>
+      <tbody id="h-body"><tr><td colspan="8" class="empty"><div class="loading"><div class="spinner"></div> Cargando…</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB NUEVA ACTA -->
+<div id="t-nueva" class="panel">
+  <div class="form-panel">
+    <div class="form-section">
+      <h3>Tipo de Acta</h3>
+      <div class="fg"><label>Tipo de equipo</label>
+        <select id="tipo" onchange="updateForm()">
+          <option value="pantalla">Pantalla / Monitor Samsung</option>
+          <option value="escaner">Escáner</option>
+          <option value="notebook">Notebook</option>
+          <option value="computador">Computador de Escritorio</option>
+          <option value="monitor">Monitor (genérico)</option>
+          <option value="allinone">All In One</option>
+          <option value="starlink">Antena Starlink</option>
+          <option value="otro">Otro periférico</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Ciudad</label><input type="text" id="ciudad" value="Coyhaique" oninput="updatePreview()"></div>
+        <div class="fg"><label>Fecha</label><input type="date" id="fecha" oninput="updatePreview()"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <h3>Funcionario</h3>
+      <div class="fg"><label>Nombre completo</label><input type="text" id="fn" placeholder="Nombre Apellido Apellido" oninput="updatePreview()"></div>
+      <div class="fg"><label>RUT</label><input type="text" id="frut" placeholder="12.345.678-9" oninput="updatePreview()"></div>
+      <div class="fg"><label>Cargo</label><input type="text" id="fcargo" placeholder="Director de Tránsito" oninput="updatePreview()"></div>
+      <div class="fg"><label>Unidad / Dirección</label><input type="text" id="funidad" placeholder="Dirección de Tránsito" oninput="updatePreview()"></div>
+    </div>
+    <div class="form-section">
+      <h3>Equipo</h3>
+      <div class="form-row">
+        <div class="fg"><label>Marca</label><input type="text" id="emarca" placeholder="SAMSUNG" oninput="updatePreview()"></div>
+        <div class="fg"><label>Modelo</label><input type="text" id="emodelo" placeholder="S3 27" oninput="updatePreview()"></div>
+      </div>
+      <div class="fg"><label>N° de Serie</label><input type="text" id="eserie" placeholder="Y300450F" oninput="updatePreview()"></div>
+      <div class="fg"><label>N° de Inventario</label><input type="text" id="einventario" placeholder="004838-00001" oninput="updatePreview()"></div>
+      <div class="fg" id="grp-specs" style="display:none"><label>Especificaciones Técnicas</label><textarea id="especs" oninput="updatePreview()" placeholder="AMD Ryzen 5 – 16GB RAM – SSD 500GB – Win 11 Pro"></textarea></div>
+      <div class="fg" id="grp-custom" style="display:none"><label>Descripción del equipo</label><input type="text" id="etipocustom" placeholder="una impresora multifuncional" oninput="updatePreview()"></div>
+      <div class="fg"><label>Estado</label>
+        <div class="radio-grp">
+          <label><input type="radio" name="estado" value="NUEVO" checked onchange="updatePreview()"> Nuevo</label>
+          <label><input type="radio" name="estado" value="USADO" onchange="updatePreview()"> Usado</label>
+        </div>
+      </div>
+      <div id="grp-acc" style="display:none;margin-top:6px">
+        <label style="font-size:12px;color:#555;font-weight:500;display:block;margin-bottom:6px">Accesorios</label>
+        <div class="chk-grid">
+          <div class="chk-item" id="acc-teclado-w"><input type="checkbox" id="acc-teclado" onchange="updatePreview()"><label for="acc-teclado">Teclado</label></div>
+          <div class="chk-item" id="acc-mouse-w"><input type="checkbox" id="acc-mouse" onchange="updatePreview()"><label for="acc-mouse">Mouse</label></div>
+          <div class="chk-item" id="acc-cargador-w"><input type="checkbox" id="acc-cargador" onchange="updatePreview()"><label for="acc-cargador">Cargador</label></div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <h3>Firmante de Informática</h3>
+      <div class="fg"><label>Nombre</label><input type="text" id="tiname" placeholder="ROBERTO UGARTE ESPAÑA" oninput="updatePreview()"></div>
+      <div class="fg"><label>Firma en reemplazo de <span style="color:#aaa;font-weight:400">(opcional)</span></label><input type="text" id="tireemplazo" placeholder="Cesar Arellano" oninput="updatePreview()"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Guardar PDF</button>
+      <button class="btn btn-success" onclick="saveActa()">💾 Guardar acta</button>
+    </div>
+    <div class="save-ok" id="save-ok">✓ Acta guardada en la base de datos</div>
+    <div class="save-err" id="save-err">✗ Error al guardar — revisa la consola</div>
+  </div>
+  <div class="preview-panel">
+    <div class="preview-bar">
+      <span>Vista previa — usa "Guardar PDF" para exportar</span>
+      <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ PDF</button>
+    </div>
+    <div class="acta-doc" id="acta-doc"></div>
+  </div>
+</div>
+
+<!-- MODAL HISTORIAL EQUIPO -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3 id="modal-title">Historial del equipo</h3>
+        <p id="modal-sub"></p>
+      </div>
+      <span class="modal-close" onclick="closeModal()">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="timeline" id="modal-timeline"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Estado global ─────────────────────────────────────────
+let ACTAS = [];
+const EQ_FILTER = { eq: '', h: '' };
+
+// ── API helpers ───────────────────────────────────────────
+async function apiGet(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function apiPost(url, data) {
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ── Cargar datos desde servidor ───────────────────────────
+async function loadData() {
+  try {
+    ACTAS = await apiGet('/api/actas');
+    document.getElementById('db-status').textContent = `⬤ ${ACTAS.length} registros`;
+    renderEquipos();
+    renderHistorial();
+  } catch (e) {
+    document.getElementById('db-status').style.background = 'rgba(244,67,54,.2)';
+    document.getElementById('db-status').style.color = '#ef9a9a';
+    document.getElementById('db-status').textContent = '✗ Sin conexión';
+    console.error('Error cargando datos:', e);
+  }
+}
+
+// ── Helpers de tipo ───────────────────────────────────────
+function normTipo(t) {
+  const u = (t || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (u.includes('PANTALLA')) return 'Pantalla';
+  if (u === 'MONITOR' || u.includes('MONITOR')) return 'Monitor';
+  if (u.includes('ESCANER') || u.includes('SCANNER')) return 'Escáner';
+  if (u.includes('NOTEBOOK') || u.includes('LAPTOP')) return 'Notebook';
+  if (u.includes('ALL IN ONE') || u.includes('AIO') || u.includes('PC ALL')) return 'All In One';
+  if (u.includes('TABLET')) return 'Tablet';
+  if (u === 'TV' || u.startsWith('TV ')) return 'TV';
+  if (u.includes('IMPRESORA')) return 'Impresora';
+  if (u.includes('STARLINK') || u.includes('ANTENA')) return 'Antena Starlink';
+  if (u.includes('ESTAC') || u.includes('TORRE')) return 'Estación de Trabajo';
+  return t || 'Equipo';
+}
+
+function tipoPill(t) {
+  const n = normTipo(t);
+  const cls = { 'Pantalla': 'tp-pantalla', 'Monitor': 'tp-monitor', 'Escáner': 'tp-escaner', 'Notebook': 'tp-notebook', 'All In One': 'tp-allinone', 'Tablet': 'tp-tablet', 'TV': 'tp-tv', 'Impresora': 'tp-impresora', 'Antena Starlink': 'tp-starlink', 'Estación de Trabajo': 'tp-otro' }[n] || 'tp-otro';
+  return `<span class="tipo-pill ${cls}">${n}</span>`;
+}
+
+function tipoMatch(t, f) {
+  if (!f) return true;
+  return normTipo(t).toLowerCase().includes(f.toLowerCase());
+}
+
+function estBadge(e) {
+  return (e || '').toUpperCase() === 'NUEVO' ? '<span class="est-nuevo">NUEVO</span>' : '<span class="est-usado">USADO</span>';
+}
+
+function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// ── Agrupar por inventario (último asignado) ──────────────
+function groupByInv() {
+  const groups = {};
+  ACTAS.forEach(r => {
+    const key = r.inventario && r.inventario.length > 2 ? r.inventario : ('__noinv_' + r.id);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+  // Ya vienen ordenados por fecha_sort DESC desde el servidor
+  return groups;
+}
+
+// ── Render: Equipos ───────────────────────────────────────
+function renderEquipos() {
+  const q = (document.getElementById('eq-search').value || '').toLowerCase();
+  const f = EQ_FILTER.eq;
+  const groups = groupByInv();
+  const rows = [];
+
+  Object.entries(groups).forEach(([key, hist]) => {
+    const r = hist[0];
+    if (!tipoMatch(r.tipo, f)) return;
+    const hay = (r.funcionario + r.inventario + r.serie + r.marca + r.modelo + r.cargo + r.unidad).toLowerCase();
+    if (q && !hay.includes(q)) return;
+
+    const noInv = !r.inventario || r.inventario.length < 2;
+    const invCell = noInv ? '<span style="color:#ccc;font-size:11px">Sin número</span>' : `<code style="font-size:12px">${esc(r.inventario)}</code>`;
+    const chain = hist.length > 1
+      ? `<span class="chain-badge" onclick="showHistory('${key}')">🔄 ${hist.length} asignaciones</span>`
+      : '<span style="font-size:11px;color:#aaa">1 asignación</span>';
+
+    rows.push({
+      fs: r.fecha_sort || '',
+      html: `<tr onclick="showHistory('${key}')">
+        <td>${invCell}</td>
+        <td>${tipoPill(r.tipo)}</td>
+        <td><strong>${esc(r.marca)}</strong>${r.modelo ? ' ' + esc(r.modelo) : ''}</td>
+        <td><code style="font-size:11px;color:#555">${esc(r.serie) || '—'}</code></td>
+        <td>${r.funcionario ? `<strong>${esc(r.funcionario)}</strong>` : '<span style="color:#bbb">Sin asignar</span>'}</td>
+        <td style="font-size:12px">${esc(r.cargo || '')}${r.unidad ? ' · <em>' + esc(r.unidad) + '</em>' : ''}</td>
+        <td style="font-size:12px;white-space:nowrap">${esc(r.fecha || '—')}</td>
+        <td>${estBadge(r.estado)}</td>
+        <td>${chain}</td>
+      </tr>`
+    });
+  });
+
+  const body = document.getElementById('eq-body');
+  body.innerHTML = rows.length ? rows.map(r => r.html).join('') : '<tr><td colspan="9" class="empty">No hay equipos que coincidan</td></tr>';
+  document.getElementById('eq-count').textContent = `${rows.length} equipo(s)`;
+  document.getElementById('b-equipos').textContent = rows.length;
+}
+
+// ── Render: Historial ─────────────────────────────────────
+function renderHistorial() {
+  const q = (document.getElementById('h-search').value || '').toLowerCase();
+  const f = EQ_FILTER.h;
+
+  const rows = ACTAS.filter(r => {
+    if (!tipoMatch(r.tipo, f)) return false;
+    if (!q) return true;
+    return (r.funcionario + r.inventario + r.serie + r.marca + r.modelo + r.cargo + r.unidad + r.rut).toLowerCase().includes(q);
+  });
+
+  const body = document.getElementById('h-body');
+  body.innerHTML = rows.length ? rows.map(r => `<tr>
+    <td style="white-space:nowrap;font-size:12px">${esc(r.fecha || '—')}</td>
+    <td>${tipoPill(r.tipo)}</td>
+    <td><code style="font-size:11px">${esc(r.inventario || '—')}</code></td>
+    <td><strong>${esc(r.marca)}</strong>${r.modelo ? ' ' + esc(r.modelo) : ''}</td>
+    <td><code style="font-size:11px;color:#555">${esc(r.serie) || '—'}</code></td>
+    <td>${esc(r.funcionario || '—')}</td>
+    <td style="font-size:12px">${esc(r.cargo || '')}${r.unidad ? ' · <em>' + esc(r.unidad) + '</em>' : ''}</td>
+    <td>${estBadge(r.estado)}</td>
+  </tr>`).join('') : '<tr><td colspan="8" class="empty">No hay registros que coincidan</td></tr>';
+
+  document.getElementById('h-count').textContent = `${rows.length} registro(s)`;
+  document.getElementById('b-hist').textContent = ACTAS.length;
+}
+
+// ── Modal: historial de equipo ────────────────────────────
+function showHistory(key) {
+  const groups = groupByInv();
+  const hist = groups[key];
+  if (!hist) return;
+  const latest = hist[0];
+  const inv = latest.inventario && latest.inventario.length > 2 ? latest.inventario : 'Sin N° de Inventario';
+
+  document.getElementById('modal-title').textContent = `${normTipo(latest.tipo)} — ${latest.marca || ''} ${latest.modelo || ''}`;
+  document.getElementById('modal-sub').textContent = `Inventario: ${inv} · Serie: ${latest.serie || '—'}`;
+
+  document.getElementById('modal-timeline').innerHTML = hist.map((r, i) => `
+    <div class="tl-item ${i === 0 ? 'latest' : ''}">
+      <div class="tl-dot"></div>
+      <div class="tl-card">
+        <div class="tl-date">${esc(r.fecha || '—')} ${i === 0 ? '<span class="actual-badge">ACTUAL</span>' : ''}</div>
+        <div class="tl-name">${esc(r.funcionario || 'Sin nombre')}</div>
+        <div class="tl-sub">${esc(r.cargo || '')}${r.unidad ? ' — ' + esc(r.unidad) : ''}</div>
+        ${r.rut ? `<div class="tl-sub">RUT: ${esc(r.rut)}</div>` : ''}
+        ${r.accesorios ? `<div class="tl-sub" style="margin-top:4px">${esc(r.accesorios)}</div>` : ''}
+        ${r.specs ? `<div class="tl-sub" style="margin-top:4px;font-style:italic">${esc(r.specs)}</div>` : ''}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+// ── Búsqueda global ───────────────────────────────────────
+function globalSearch(q) {
+  document.getElementById('eq-search').value = q;
+  document.getElementById('h-search').value = q;
+  renderEquipos(); renderHistorial();
+}
+
+// ── Filtros ───────────────────────────────────────────────
+function toggleFilter(btn, ns) {
+  document.querySelectorAll(`[data-f="${ns}"]`).forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  EQ_FILTER[ns] = btn.dataset.v;
+  if (ns === 'eq') renderEquipos(); else renderHistorial();
+}
+
+// ── Tabs ──────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('t-' + id).classList.add('active');
+  const map = { equipos: 0, historial: 1, nueva: 2 };
+  document.querySelectorAll('.tab')[map[id]].classList.add('active');
+}
+
+// ── Formulario Nueva Acta ─────────────────────────────────
+const CFG = {
+  pantalla: { titulo: 'Acta de Asignación de Pantalla', sec: 'Identificación de la pantalla:', art: 'una pantalla', specs: false, teclado: false, mouse: false, cargador: false },
+  escaner: { titulo: 'Acta de Asignación de Escaner', sec: 'Identificación del Escaner:', art: 'un escáner', specs: false, teclado: false, mouse: false, cargador: false },
+  notebook: { titulo: 'Acta de Asignación de Estación de Trabajo', sec: 'Identificación de la Estación de Trabajo notebook:', art: 'una estación de trabajo (notebook)', specs: true, teclado: false, mouse: false, cargador: true },
+  computador: { titulo: 'Acta de Asignación de Estación de Trabajo', sec: 'Identificación de la Estación de Trabajo:', art: 'una estación de trabajo', specs: true, teclado: true, mouse: true, cargador: false },
+  monitor: { titulo: 'Acta de Asignación de Estación de Trabajo', sub: 'MONITOR', sec: 'Identificación Monitor de Trabajo:', art: 'un monitor', specs: true, teclado: true, mouse: true, cargador: false },
+  allinone: { titulo: 'Acta de Asignación de ALL IN ONE', sec: 'Identificación de ALL IN ONE:', art: 'una estación de trabajo All In One', specs: true, teclado: true, mouse: true, cargador: false },
+  starlink: { titulo: 'Acta de Asignación de Antena Starlink', sec: 'Identificación de la antena:', art: 'una antena Starlink', specs: false, teclado: false, mouse: false, cargador: false },
+  otro: { titulo: 'Acta de Asignación de Equipo', sec: 'Identificación del Equipo:', art: 'un equipo', specs: true, teclado: true, mouse: true, cargador: true }
+};
+
+const g = id => document.getElementById(id);
+const v = id => g(id).value.trim();
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+function fmtDate(s) {
+  if (!s) return '__ de _______ de ____';
+  const [y, m, d] = s.split('-');
+  return `${parseInt(d)} de ${MESES[parseInt(m) - 1]} de ${y}`;
+}
+function estado() { return document.querySelector('input[name="estado"]:checked').value; }
+
+function updateForm() {
+  const t = v('tipo'), c = CFG[t];
+  g('grp-specs').style.display = c.specs ? 'block' : 'none';
+  g('grp-custom').style.display = t === 'otro' ? 'block' : 'none';
+  const anyAcc = c.teclado || c.mouse || c.cargador;
+  g('grp-acc').style.display = anyAcc ? 'block' : 'none';
+  g('acc-teclado-w').style.display = c.teclado ? 'flex' : 'none';
+  g('acc-mouse-w').style.display = c.mouse ? 'flex' : 'none';
+  g('acc-cargador-w').style.display = c.cargador ? 'flex' : 'none';
+  updatePreview();
+}
+
+function updatePreview() {
+  const tipo = v('tipo'), c = CFG[tipo];
+  const ciudad = v('ciudad') || 'Coyhaique';
+  const fecha = fmtDate(v('fecha'));
+  const fn = v('fn') || '<em>[Nombre del Funcionario]</em>';
+  const frut = v('frut') || '[RUT]';
+  const fcargo = v('fcargo') || '[Cargo]';
+  const funidad = v('funidad') || '[Unidad]';
+  const emarca = v('emarca') || '[Marca]';
+  const emodelo = v('emodelo') || '[Modelo]';
+  const eserie = v('eserie') || '[N° Serie]';
+  const einv = v('einventario') || '[N° Inventario]';
+  const especs = v('especs');
+  const est = estado();
+  const tiname = v('tiname') || '[Nombre Funcionario TI]';
+  const tiremp = v('tireemplazo');
+  const art = tipo === 'otro' ? (v('etipocustom') || 'un equipo') : c.art;
+
+  let items = `<li>Marca: ${emarca}</li><li>Modelo: ${emodelo}</li><li>Número de Serie: ${eserie}</li><li>Número de Inventario: ${einv}</li>`;
+  if (c.specs && especs) items += `<li>Especificaciones Técnicas: ${especs}</li>`;
+  items += `<li>Equipo: ${est}</li>`;
+
+  const hasTec = c.teclado && g('acc-teclado').checked;
+  const hasMse = c.mouse && g('acc-mouse').checked;
+  const hasCar = c.cargador && g('acc-cargador').checked;
+  const anyAcc = c.teclado || c.mouse || c.cargador;
+  let cond;
+  if (anyAcc) {
+    let accs = '';
+    if (c.teclado) accs += `<li>Teclado: ${hasTec ? 'SI' : 'NO'}</li>`;
+    if (c.mouse) accs += `<li>Mouse: ${hasMse ? 'SI' : 'NO'}</li>`;
+    if (c.cargador) accs += `<li>Cargador: ${hasCar ? 'SI' : 'NO'}</li>`;
+    cond = `<p class="a-para">El Equipo se encuentra en buenas condiciones de funcionamiento. Se entrega junto con los siguientes accesorios:</p><ul class="a-list">${accs}</ul>`;
+  } else {
+    cond = `<p class="a-para">El Equipo se encuentra en buenas condiciones de funcionamiento, sin daños ni problemas técnicos.</p>`;
+  }
+
+  const pd = tiremp ? `<p style="margin-top:6px">Pd: Firma en reemplazo del colega ${tiremp}.</p>` : '';
+
+  g('acta-doc').innerHTML = `
+    <p class="a-title">${c.titulo}</p>
+    ${c.sub ? `<p class="a-subtitle">${c.sub}</p>` : ''}
+    <p class="a-date">En ${ciudad}, a ${fecha}.</p>
+    <p class="a-para">Por medio de la presente se procede a realizar la entrega de ${art} a <strong>${fn}</strong> en adelante "Funcionario" <strong>RUT: ${frut}</strong> quien desempeña el cargo de <strong>${fcargo}</strong> Unidad de Dependencia de <strong>${funidad}</strong> de la Municipalidad de Coyhaique.</p>
+    <p class="a-sec">${c.sec}</p>
+    <ul class="a-list">${items}</ul>
+    <p class="a-sec">Condiciones de Entrega:</p>
+    ${cond}
+    <p class="a-sec">Responsabilidades del funcionario:</p>
+    <p class="a-para">El funcionario se compromete a hacer uso adecuado del equipo asignado, respetando las políticas y procedimientos de seguridad de la información del municipio y cuidando de su correcto mantenimiento.</p>
+    <p class="a-sec">Firma de Entrega:</p>
+    <p class="a-para">El funcionario reconoce haber recibido el equipo en las condiciones descritas.</p>
+    <div class="a-sig">
+      <p>Nombre del funcionario: <strong>${fn}</strong></p><span class="a-gap"></span>
+      <p>Firma&nbsp;&nbsp;: <span class="a-line"></span></p>
+    </div>
+    <p class="a-sec" style="margin-top:22px">Firma de Aceptación:</p>
+    <div class="a-sig">
+      <p>Nombre del funcionario unidad: <strong>${tiname}</strong></p><span class="a-gap"></span>
+      <p>Firma del funcionario: <span class="a-line"></span></p>
+      ${pd}
+    </div>`;
+}
+
+// ── Guardar acta → POST a la API ──────────────────────────
+async function saveActa() {
+  const tipo = v('tipo');
+  const c = CFG[tipo];
+  const fechaStr = v('fecha');
+
+  if (!v('fn')) { alert('Ingresa el nombre del funcionario'); return; }
+
+  // Construir accesorios como texto
+  const accs = [];
+  if (c.teclado && g('acc-teclado').checked) accs.push('Teclado: Sí');
+  if (c.mouse && g('acc-mouse').checked) accs.push('Mouse: Sí');
+  if (c.cargador && g('acc-cargador').checked) accs.push('Cargador: Sí');
+
+  const rec = {
+    tipo: normTipo(tipo),
+    fecha_sort: fechaStr || '',
+    fecha: fmtDate(fechaStr),
+    funcionario: v('fn'),
+    rut: v('frut'),
+    cargo: v('fcargo'),
+    unidad: v('funidad'),
+    marca: v('emarca'),
+    modelo: v('emodelo'),
+    serie: v('eserie'),
+    inventario: v('einventario'),
+    specs: v('especs'),
+    accesorios: accs.join(' / '),
+    estado: estado(),
+    firmanteTI: v('tiname')
+  };
+
+  try {
+    await apiPost('/api/actas', rec);
+    await loadData(); // recargar desde servidor
+    const ok = g('save-ok');
+    ok.style.display = 'block';
+    setTimeout(() => ok.style.display = 'none', 3000);
+  } catch (e) {
+    const err = g('save-err');
+    err.textContent = '✗ Error al guardar: ' + e.message;
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 4000);
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────
+g('fecha').valueAsDate = new Date();
+updateForm();
+loadData();
+</script>
+</body>
+</html>
